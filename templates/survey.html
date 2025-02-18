@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Опрос</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .question {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .question h3 {
+            margin-top: 0;
+            color: #444;
+        }
+        .options-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 30px auto 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .required {
+            color: red;
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .recording {
+            background-color: #ffecec;
+            color: #d32f2f;
+        }
+        .controls {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .controls button {
+            margin: 0 10px;
+            display: inline-block;
+        }
+        #recordButton {
+            background-color: #d32f2f;
+        }
+        #recordButton:hover {
+            background-color: #b71c1c;
+        }
+        #recordButton.recording {
+            background-color: #f44336;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .custom-answer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Опрос</h1>
+        
+        <div id="recordingStatus" class="status" style="display: none;">
+            Идет запись голоса...
+        </div>
+        
+        <div class="controls">
+            <button id="recordButton" type="button">Начать запись</button>
+        </div>
+        
+        <form id="surveyForm" action="/submit" method="post">
+            <input type="hidden" name="session_id" value="{{.SessionID}}">
+            
+            {{range .Questions}}
+            <div class="question">
+                <h3>{{.Text}} {{if .Required}}<span class="required">*</span>{{end}}</h3>
+                
+                {{if eq .Type "single_choice"}}
+                <div class="options-group">
+                    {{range .Options}}
+                    <label>
+                        <input type="radio" name="{{$.ID}}" value="{{.}}" {{if $.Required}}required{{end}}>
+                        {{.}}
+                    </label>
+                    {{end}}
+                </div>
+                {{else if eq .Type "multi_choice"}}
+                <div class="options-group">
+                    {{range .Options}}
+                    <label>
+                        <input type="checkbox" name="{{$.ID}}" value="{{.}}">
+                        {{.}}
+                    </label>
+                    {{end}}
+                </div>
+                {{else if eq .Type "text"}}
+                <div>
+                    <textarea name="{{.ID}}" rows="4" {{if .Required}}required{{end}}></textarea>
+                </div>
+                {{else if eq .Type "mixed"}}
+                <div class="options-group">
+                    {{range .Options}}
+                    <label>
+                        <input type="checkbox" name="{{$.ID}}" value="{{.}}">
+                        {{.}}
+                    </label>
+                    {{end}}
+                    
+                    <div class="custom-answer">
+                        <label>Свой вариант:</label>
+                        <input type="text" name="{{.ID}}_custom">
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+            
+            <button type="submit">Отправить ответы</button>
+        </form>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const recordButton = document.getElementById('recordButton');
+            const recordingStatus = document.getElementById('recordingStatus');
+            const form = document.getElementById('surveyForm');
+            const sessionId = document.querySelector('input[name="session_id"]').value;
+            
+            let isRecording = false;
+            
+            // Обработчик кнопки записи
+            recordButton.addEventListener('click', function() {
+                if (!isRecording) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+            });
+            
+            // Начать запись
+            async function startRecording() {
+                try {
+                    const response = await fetch(`/start-recording?session_id=${sessionId}`);
+                    if (response.ok) {
+                        isRecording = true;
+                        recordButton.textContent = 'Остановить запись';
+                        recordButton.classList.add('recording');
+                        recordingStatus.style.display = 'block';
+                        recordingStatus.classList.add('recording');
+                    } else {
+                        alert('Не удалось начать запись аудио');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка при запуске записи');
+                }
+            }
+            
+            // Остановить запись
+            async function stopRecording() {
+                try {
+                    const response = await fetch(`/stop-recording?session_id=${sessionId}`);
+                    if (response.ok) {
+                        isRecording = false;
+                        recordButton.textContent = 'Начать запись';
+                        recordButton.classList.remove('recording');
+                        recordingStatus.style.display = 'none';
+                    } else {
+                        alert('Не удалось остановить запись аудио');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка при остановке записи');
+                }
+            }
+            
+            // Перед отправкой формы остановить запись, если она все еще идет
+            form.addEventListener('submit', async function(event) {
+                if (isRecording) {
+                    event.preventDefault();
+                    await stopRecording();
+                    form.submit();
+                }
+            });
+            
+            // Валидация для вопросов, где требуется хотя бы один чекбокс
+            form.addEventListener('submit', function(event) {
+                const multiChoiceQuestions = form.querySelectorAll('.question');
+                
+                multiChoiceQuestions.forEach(question => {
+                    const checkboxes = question.querySelectorAll('input[type="checkbox"]');
+                    if (checkboxes.length === 0) return;
+                    
+                    const required = question.querySelector('h3 .required');
+                    if (!required) return;
+                    
+                    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                    const customInput = question.querySelector('input[type="text"]');
+                    const hasCustomValue = customInput && customInput.value.trim() !== '';
+                    
+                    if (!anyChecked && !hasCustomValue) {
+                        event.preventDefault();
+                        alert('Пожалуйста, ответьте на все обязательные вопросы');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
