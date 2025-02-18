@@ -1,0 +1,58 @@
+{
+  "email": {
+    "to": "recipient@example.com",
+    "from": "survey@yourdomain.com",
+    "subject": "Результаты тестирования"
+  },
+  "smtp_host": "smtp.example.com",
+  "smtp_port": 587,
+  "smtp_user": "your_username",
+  "smtp_pass": "your_password",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "Как вы оцениваете качество нашего продукта?",
+      "type": "single_choice",
+      "options": [
+        "Отлично",
+        "Хорошо",
+        "Удовлетворительно",
+        "Плохо",
+        "Очень плохо"
+      ],
+      "required": true
+    },
+    {
+      "id": "q2",
+      "text": "Выберите функции, которые вы используете (можно выбрать несколько):",
+      "type": "multi_choice",
+      "options": [
+        "Экспорт отчетов",
+        "Импорт данных",
+        "Аналитика",
+        "Интеграция с другими системами",
+        "Настройка оповещений"
+      ],
+      "required": false
+    },
+    {
+      "id": "q3",
+      "text": "Опишите, что бы вы хотели улучшить в нашем продукте:",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "q4",
+      "text": "Через какие каналы вы узнали о нашем продукте?",
+      "type": "mixed",
+      "options": [
+        "Поисковые системы",
+        "Социальные сети",
+        "От коллег/друзей",
+        "Реклама"
+      ],
+      "allow_custom": true,
+      "required": true
+    }
+  ]
+}
